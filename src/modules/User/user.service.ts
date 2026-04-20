@@ -1,6 +1,8 @@
 import { UserModel } from "../../DB/model/User/user.model";
+import { storageApproachEnum, uploadApproachEnum } from "../../common/enums/multer.enum";
 import { compareHash, generateHash } from "../../common/security/hash.security";
 import { get, set } from "../../common/services/redis.service";
+import { S3Service } from "../../common/services/s3.service";
 
 interface UpdatePassInput {
     currentPassword: string;
@@ -8,6 +10,10 @@ interface UpdatePassInput {
 }
 
 class AuthSecurityService {
+    private readonly s3:S3Service
+    constructor() {
+        this.s3 = new S3Service();
+    }
     private async createRevokeToken(userId: string, jti: string, iat: number) {
         const key = `revoke_${userId}_${jti}`;
         const exists = await get(key);
@@ -39,6 +45,33 @@ class AuthSecurityService {
 
         return { message: "Password updated successfully" };
     }
+
+    async profile(user: any) {
+    return {
+        name: user.username,
+        email: user.email,
+        profilePicture: user.profileImage,
+    };
+    }
+
+    async profileImage({ContentType, OriginalName} : { ContentType: string; OriginalName: string }, user: any) {
+        const profile = await UserModel.findById(user._id);
+        if (!profile) throw new Error("User not found");
+        const {url, key} = await this.s3.createPresignedUploadLink({ ContentType, OriginalName, path: "profile-images"});
+        profile.profileImage = (key) as string;
+        await profile.save();
+        return { user, url };
+    }
+
+    async coverImage(user: any, files: Express.Multer.File[]) {
+        const profile = await UserModel.findById(user._id);
+        if (!profile) throw new Error("User not found");
+        const urls = await this.s3.uuploadFiles({ files, path: "cover-images" , storageApproach: storageApproachEnum.Disk, uploadApproach: uploadApproachEnum.Large});
+        profile.coverImages = urls as string[];
+        await profile.save();
+        return { message: "Cover image updated successfully" };
+    }
+
 }
 
 export default new AuthSecurityService();

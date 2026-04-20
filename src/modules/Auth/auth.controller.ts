@@ -3,7 +3,6 @@ import authService from "./auth.service";
 import { successResponse } from "../../common/Responses/index";
 import { validation } from "../../middleware";
 import { loginSchema, signUpSchema } from "./auth.validation";
-import { authentication } from "../../middleware/auth.middelware";
 
 const router: RouterType = Router();
 
@@ -81,7 +80,7 @@ router.post("/forget-pass", async (req, res) => {
         const result = await authService.forgetPassword(email);
         res.status(200).json({ message: "Password reset link sent to email" });
     } catch (error) {
-        res.status(500).json({ message: "Error sending password reset link", error: error.message });
+        res.status(500).json({ message: "Error sending password reset link", error: error });
     }
 });
 

@@ -1,9 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const user_model_1 = require("../../DB/model/User/user.model");
+const multer_enum_1 = require("../../common/enums/multer.enum");
 const hash_security_1 = require("../../common/security/hash.security");
 const redis_service_1 = require("../../common/services/redis.service");
+const s3_service_1 = require("../../common/services/s3.service");
 class AuthSecurityService {
+    s3;
+    constructor() {
+        this.s3 = new s3_service_1.S3Service();
+    }
     async createRevokeToken(userId, jti, iat) {
         const key = `revoke_${userId}_${jti}`;
         const exists = await (0, redis_service_1.get)(key);
@@ -30,6 +36,31 @@ class AuthSecurityService {
         profile.password = hashedPassword;
         await profile.save();
         return { message: "Password updated successfully" };
+    }
+    async profile(user) {
+        return {
+            name: user.username,
+            email: user.email,
+            profilePicture: user.profileImage,
+        };
+    }
+    async profileImage({ ContentType, OriginalName }, user) {
+        const profile = await user_model_1.UserModel.findById(user._id);
+        if (!profile)
+            throw new Error("User not found");
+        const { url, key } = await this.s3.createPresignedUploadLink({ ContentType, OriginalName, path: "profile-images" });
+        profile.profileImage = (key);
+        await profile.save();
+        return { user, url };
+    }
+    async coverImage(user, files) {
+        const profile = await user_model_1.UserModel.findById(user._id);
+        if (!profile)
+            throw new Error("User not found");
+        const urls = await this.s3.uuploadFiles({ files, path: "cover-images", storageApproach: multer_enum_1.storageApproachEnum.Disk, uploadApproach: multer_enum_1.uploadApproachEnum.Large });
+        profile.coverImages = urls;
+        await profile.save();
+        return { message: "Cover image updated successfully" };
     }
 }
 exports.default = new AuthSecurityService();

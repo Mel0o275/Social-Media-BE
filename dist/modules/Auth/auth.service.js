@@ -11,56 +11,6 @@ const config_1 = require("../../config/config");
 const user_enum_1 = require("../../common/enums/user.enum");
 const google_auth_library_1 = require("google-auth-library");
 class AuthService {
-    async signUpWithGoogleAccount(idToken) {
-        try {
-            const client = new google_auth_library_1.OAuth2Client('822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com');
-            const ticket = await client.verifyIdToken({
-                idToken,
-                audience: '822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com'
-            });
-            const payload = ticket.getPayload();
-            console.log("Google Payload:", payload);
-            if (!payload || !payload.email_verified) {
-                return { message: 'Email not verified by Google' };
-            }
-            const exist = await user_model_1.UserModel.findOne({ email: payload.email });
-            if (exist) {
-                if (exist.provider === user_enum_1.provider.LOCAL) {
-                    return { message: "User exists as LOCAL account. Please login with email/password." };
-                }
-                const user = await this.loginWithGoogle(idToken);
-                return { message: "Login successful", user };
-            }
-            const newUser = await user_model_1.UserModel.create({
-                firstName: payload.given_name,
-                lastName: payload.family_name,
-                email: payload.email,
-                provider: user_enum_1.provider.GOOGLE,
-                isVerified: true,
-            });
-            return { message: "Signup successful", user: newUser };
-        }
-        catch (error) {
-            console.error('Google Signup Error:', error);
-            return { message: 'Error processing Google signup' };
-        }
-    }
-    async loginWithGoogle(idToken) {
-        const client = new google_auth_library_1.OAuth2Client('822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com');
-        const ticket = await client.verifyIdToken({
-            idToken,
-            audience: '822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com'
-        });
-        const payload = ticket.getPayload();
-        if (!payload || !payload.email_verified) {
-            throw new Error('Email not verified by Google');
-        }
-        const exist = await user_model_1.UserModel.findOne({ email: payload.email });
-        if (!exist || exist.provider !== user_enum_1.provider.GOOGLE) {
-            throw new Error('Invalid provider, please login with your email and password');
-        }
-        return await (0, token_security_1.createLoginCredentials)(exist);
-    }
     // ================= SIGN UP =================
     async signUp(inputs) {
         const { username, email, password, phone } = inputs;
@@ -196,6 +146,60 @@ class AuthService {
         const link = `http://localhost:5173/reset-password?token=${token}`;
         await (0, email_otp_1.sendResetPasswordEmail)(email, link);
         return { message: "Reset link sent" };
+    }
+    // ================= GOOGLE =================
+    async signUpWithGoogleAccount(idToken) {
+        try {
+            const client = new google_auth_library_1.OAuth2Client('822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com');
+            const ticket = await client.verifyIdToken({
+                idToken,
+                audience: '822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com'
+            });
+            const payload = ticket.getPayload();
+            console.log("Google Payload:", payload);
+            if (!payload || !payload.email_verified || !payload.email) {
+                return { message: 'Email not verified by Google' };
+            }
+            const email = payload.email;
+            const exist = await user_model_1.UserModel.findOne({ email });
+            if (exist) {
+                if (exist.provider === user_enum_1.provider.LOCAL) {
+                    return { message: "User exists as LOCAL account. Please login with email/password." };
+                }
+                const user = await this.loginWithGoogle(idToken);
+                return { message: "Login successful", user };
+            }
+            const firstName = payload.given_name ?? "";
+            const lastName = payload.family_name ?? "";
+            const newUser = await user_model_1.UserModel.create({
+                firstName,
+                lastName,
+                email: payload.email,
+                provider: user_enum_1.provider.GOOGLE,
+                isVerified: true,
+            });
+            return { message: "Signup successful", user: newUser };
+        }
+        catch (error) {
+            console.error('Google Signup Error:', error);
+            return { message: 'Error processing Google signup' };
+        }
+    }
+    async loginWithGoogle(idToken) {
+        const client = new google_auth_library_1.OAuth2Client('822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com');
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: '822248230063-aeiq4udlj5l4lpnno4j1di5vepbesfs3.apps.googleusercontent.com'
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email_verified || !payload.email) {
+            throw new Error('Email not verified by Google');
+        }
+        const exist = await user_model_1.UserModel.findOne({ email: payload.email });
+        if (!exist || exist.provider !== user_enum_1.provider.GOOGLE) {
+            throw new Error('Invalid provider, please login with your email and password');
+        }
+        return await (0, token_security_1.createLoginCredentials)(exist);
     }
 }
 exports.default = new AuthService();

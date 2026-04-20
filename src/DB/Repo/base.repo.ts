@@ -4,7 +4,7 @@ export abstract class BaseRepo<TRawDocument extends Document> {
     constructor(protected readonly model: Model<TRawDocument>) { }
 
     async create({ data, options }: { data: Partial<TRawDocument>[], options?: CreateOptions }): Promise<HydratedDocument<TRawDocument>[]> {
-        const createdDocs = await this.model.create(data, options);
+        const createdDocs = await this.model.create(data as any, options);
         return createdDocs;
     }
 
