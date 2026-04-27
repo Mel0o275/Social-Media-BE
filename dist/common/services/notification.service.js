@@ -10,7 +10,7 @@ class FCMService {
     client;
     constructor() {
         if (!firebase_admin_1.default.apps.length) {
-            const serviceAccount = JSON.parse((0, fs_1.readFileSync)('./src/config/social-app-5d8de-firebase-adminsdk-fbsvc-a255c961bc.json', 'utf-8'));
+            const serviceAccount = JSON.parse((0, fs_1.readFileSync)('./src/config/social-app-5d8de-firebase-adminsdk-fbsvc-4154a8c702.json', 'utf-8'));
             this.client = firebase_admin_1.default.initializeApp({
                 credential: firebase_admin_1.default.credential.cert(serviceAccount)
             });

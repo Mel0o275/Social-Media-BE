@@ -7,7 +7,7 @@ export class FCMService {
     constructor() {
         if (!admin.apps.length) {
             const serviceAccount = JSON.parse(
-                readFileSync('./src/config/social-app-5d8de-firebase-adminsdk-fbsvc-a255c961bc.json', 'utf-8')
+                readFileSync('./src/config/social-app-5d8de-firebase-adminsdk-fbsvc-4154a8c702.json', 'utf-8')
             );
 
             this.client = admin.initializeApp({
