@@ -45,22 +45,37 @@ class AuthSecurityService {
         };
     }
     async profileImage({ ContentType, OriginalName }, user) {
+        const oldPath = user.profileImage || "";
+        if (oldPath) {
+            await this.s3.deleteFile({ Key: oldPath });
+        }
         const profile = await user_model_1.UserModel.findById(user._id);
         if (!profile)
             throw new Error("User not found");
-        const { url, key } = await this.s3.createPresignedUploadLink({ ContentType, OriginalName, path: "profile-images" });
+        const { url, key } = await this.s3.createPresignedUploadLink({ ContentType, OriginalName, path: `${user._id}/profile-images` });
         profile.profileImage = (key);
         await profile.save();
         return { user, url };
     }
     async coverImage(user, files) {
+        const oldPaths = user.coverImages || [];
+        if (oldPaths.length > 0) {
+            await Promise.all(oldPaths.map((key) => this.s3.deleteFiles({ Keys: [{ Key: key }] })));
+        }
         const profile = await user_model_1.UserModel.findById(user._id);
         if (!profile)
             throw new Error("User not found");
-        const urls = await this.s3.uuploadFiles({ files, path: "cover-images", storageApproach: multer_enum_1.storageApproachEnum.Disk, uploadApproach: multer_enum_1.uploadApproachEnum.Large });
+        const urls = await this.s3.uuploadFiles({ files, path: `${user._id}/cover-images`, storageApproach: multer_enum_1.storageApproachEnum.Disk, uploadApproach: multer_enum_1.uploadApproachEnum.Large });
         profile.coverImages = urls;
         await profile.save();
         return { message: "Cover image updated successfully" };
+    }
+    async deleteProfile(user) {
+        const account = await user_model_1.UserModel.findByIdAndDelete(user._id);
+        if (!account)
+            throw new Error("User not found");
+        await this.s3.deleteFolderByPrefix({ prefix: `Social/${user._id}/` });
+        return { message: "Account deleted successfully" };
     }
 }
 exports.default = new AuthSecurityService();

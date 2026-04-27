@@ -10,6 +10,7 @@ exports.loginSchema = {
     body: zod_1.default.strictObject({
         email: general_validation_1.generalValidationFeilds.email,
         password: general_validation_1.generalValidationFeilds.password,
+        FCM: zod_1.default.string().optional()
     })
 };
 exports.signUpSchema = {

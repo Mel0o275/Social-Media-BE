@@ -1,0 +1,1 @@
+export {default as StoryController} from './story.controller';

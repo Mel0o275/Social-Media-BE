@@ -5,6 +5,7 @@ export const loginSchema = {
     body: z.strictObject({
         email: generalValidationFeilds.email,
         password: generalValidationFeilds.password,
+        FCM:z.string().optional()
     })
 }
 

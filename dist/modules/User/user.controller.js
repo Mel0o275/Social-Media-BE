@@ -82,4 +82,13 @@ router.patch("/cover-images", (0, auth_middelware_1.authentication)(), (0, multe
         res.status(500).json({ message: "Error updating cover images", error: error });
     }
 });
+router.delete("/delete-profile", (0, auth_middelware_1.authentication)(), async (req, res) => {
+    try {
+        const result = await user_service_1.default.deleteProfile(req.user);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        res.status(500).json({ message: "Error deleting profile", error: error });
+    }
+});
 exports.default = router;

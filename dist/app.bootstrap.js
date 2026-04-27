@@ -14,6 +14,9 @@ const redis_connection_1 = require("./DB/redis.connection");
 const s3_service_1 = require("./common/services/s3.service");
 const node_util_1 = require("node:util");
 const node_stream_1 = require("node:stream");
+const Comment_1 = require("./modules/Comment");
+const Story_1 = require("./modules/Story");
+const Notifications_1 = require("./modules/Notifications");
 const s3WriteStream = (0, node_util_1.promisify)(node_stream_1.pipeline);
 const bootstrap = async () => {
     // DB
@@ -55,6 +58,11 @@ const bootstrap = async () => {
         });
         return res.json(result);
     });
+    // app.post('/send-notification', async (req: express.Request, res: express.Response) => {     
+    //     console.log(req.body.token);
+    //     await notificationService.sendNotification(req.body.token, "Test Notification", "This is a test notification sent from the server.");
+    //     res.json({ message: 'Notification sent successfully' });
+    // });
     app.get('/', (req, res) => {
         res.send('Hello World!');
     });
@@ -62,6 +70,10 @@ const bootstrap = async () => {
     // Routing
     app.use('/auth', modules_1.AuthController);
     app.use('/user', modules_1.UserController);
+    app.use('/post', modules_1.PostController);
+    app.use('/comment', Comment_1.CommentController);
+    app.use('/story', Story_1.StoryController);
+    app.use('/notifications', Notifications_1.NotificationController);
     // Global Error Handler
     app.use(middleware_1.globalErrorHandler);
     // Invalid Routing

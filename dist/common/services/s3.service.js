@@ -114,6 +114,37 @@ class S3Service {
         });
         return await this.client.send(command);
     }
+    async deleteFile({ Bucket = config_1.AWS_BUCKET_NAME, Key }) {
+        const command = new client_s3_1.DeleteObjectCommand({
+            Bucket,
+            Key
+        });
+        return await this.client.send(command);
+    }
+    async deleteFiles({ Bucket = config_1.AWS_BUCKET_NAME, Keys }) {
+        const command = new client_s3_1.DeleteObjectsCommand({
+            Bucket,
+            Delete: {
+                Objects: Keys,
+                Quiet: true
+            }
+        });
+        return await this.client.send(command);
+    }
+    async listFolderDir({ Bucket = config_1.AWS_BUCKET_NAME, prefix }) {
+        const command = new client_s3_1.ListObjectsV2Command({
+            Bucket,
+            Prefix: prefix
+        });
+        return await this.client.send(command);
+    }
+    async deleteFolderByPrefix({ Bucket = config_1.AWS_BUCKET_NAME, prefix }) {
+        const result = await this.listFolderDir({ Bucket, prefix });
+        if (result.Contents && result.Contents.length > 0) {
+            const keysToDelete = result.Contents.map((item) => ({ Key: item.Key }));
+            await this.deleteFiles({ Bucket, Keys: keysToDelete });
+        }
+    }
 }
 exports.S3Service = S3Service;
 exports.s3Service = new S3Service();

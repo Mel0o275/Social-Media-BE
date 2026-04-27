@@ -1,8 +1,10 @@
+import { HydratedDocument } from "mongoose";
 import { UserModel } from "../../DB/model/User/user.model";
 import { storageApproachEnum, uploadApproachEnum } from "../../common/enums/multer.enum";
 import { compareHash, generateHash } from "../../common/security/hash.security";
 import { get, set } from "../../common/services/redis.service";
 import { S3Service } from "../../common/services/s3.service";
+import { IUser } from "../../common/interfaces/user.interface";
 
 interface UpdatePassInput {
     currentPassword: string;
@@ -55,23 +57,37 @@ class AuthSecurityService {
     }
 
     async profileImage({ContentType, OriginalName} : { ContentType: string; OriginalName: string }, user: any) {
+        const oldPath = user.profileImage as string || "";
+        if (oldPath) {
+            await this.s3.deleteFile({ Key: oldPath });
+        }
         const profile = await UserModel.findById(user._id);
         if (!profile) throw new Error("User not found");
-        const {url, key} = await this.s3.createPresignedUploadLink({ ContentType, OriginalName, path: "profile-images"});
+        const {url, key} = await this.s3.createPresignedUploadLink({ ContentType, OriginalName, path: `${user._id}/profile-images`});
         profile.profileImage = (key) as string;
         await profile.save();
         return { user, url };
     }
 
     async coverImage(user: any, files: Express.Multer.File[]) {
+        const oldPaths = user.coverImages as string[] || [];
+        if (oldPaths.length > 0) {
+            await Promise.all(oldPaths.map((key) => this.s3.deleteFiles({ Keys: [{ Key: key }] })));
+        }
         const profile = await UserModel.findById(user._id);
         if (!profile) throw new Error("User not found");
-        const urls = await this.s3.uuploadFiles({ files, path: "cover-images" , storageApproach: storageApproachEnum.Disk, uploadApproach: uploadApproachEnum.Large});
+        const urls = await this.s3.uuploadFiles({ files, path: `${user._id}/cover-images` , storageApproach: storageApproachEnum.Disk, uploadApproach: uploadApproachEnum.Large});
         profile.coverImages = urls as string[];
         await profile.save();
         return { message: "Cover image updated successfully" };
     }
 
+    async deleteProfile(user:HydratedDocument<IUser>) {
+        const account = await UserModel.findByIdAndDelete(user._id);
+        if (!account) throw new Error("User not found");
+        await this.s3.deleteFolderByPrefix({ prefix: `Social/${user._id}/` });
+        return { message: "Account deleted successfully" };
+    }
 }
 
 export default new AuthSecurityService();

@@ -1,4 +1,4 @@
-import { CompleteMultipartUploadCommandOutput, GetObjectAclCommandOutput, GetObjectCommand, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import { CompleteMultipartUploadCommandOutput, DeleteObjectCommand, DeleteObjectsCommand, GetObjectAclCommandOutput, GetObjectCommand, ListObjectsV2Command, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { AWS_ACCESS_KEY, AWS_BUCKET_NAME, AWS_REGION, AWS_SECRET_KEY } from "../../config/config"
 import { randomUUID } from "node:crypto"
 import { storageApproachEnum, uploadApproachEnum } from "../enums/multer.enum"
@@ -209,5 +209,65 @@ export class S3Service {
         })
         return await this.client.send(command);
     }
+
+    async deleteFile({
+        Bucket = AWS_BUCKET_NAME,
+        Key
+    }: {
+        Bucket?: string,
+        Key: string,
+    }) {
+        const command = new DeleteObjectCommand({
+            Bucket,
+            Key
+        })
+        return await this.client.send(command);
+    }
+
+        async deleteFiles({
+        Bucket = AWS_BUCKET_NAME,
+        Keys
+    }: {
+        Bucket?: string,
+        Keys: {Key: string}[],
+    }) {
+        const command = new DeleteObjectsCommand({
+            Bucket,
+            Delete: {
+                Objects: Keys,
+                Quiet: true
+            }
+        })
+        return await this.client.send(command);
+    }
+
+        async listFolderDir({
+        Bucket = AWS_BUCKET_NAME,
+        prefix
+    }: {
+        Bucket?: string,
+        prefix: string,
+    }) {
+        const command = new ListObjectsV2Command({
+            Bucket,
+            Prefix: prefix
+        })
+        return await this.client.send(command);
+    }
+
+        async deleteFolderByPrefix({
+        Bucket = AWS_BUCKET_NAME,
+        prefix
+    }: {
+        Bucket?: string,
+        prefix: string,
+    }) {
+        const result = await this.listFolderDir({ Bucket, prefix });
+        if (result.Contents && result.Contents.length > 0) {
+            const keysToDelete = result.Contents.map((item) => ({ Key: item.Key! }));
+            await this.deleteFiles({ Bucket, Keys: keysToDelete });
+        }
+    }
+
 }
 export const s3Service = new S3Service();

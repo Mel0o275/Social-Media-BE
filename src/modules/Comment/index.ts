@@ -1,0 +1,1 @@
+export {default as CommentController} from './comment.controller';

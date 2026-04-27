@@ -10,7 +10,12 @@ const redis_connection_1 = require("../../DB/redis.connection");
 const config_1 = require("../../config/config");
 const user_enum_1 = require("../../common/enums/user.enum");
 const google_auth_library_1 = require("google-auth-library");
+const notification_service_1 = require("../../common/services/notification.service");
 class AuthService {
+    fcmService;
+    constructor() {
+        this.fcmService = new notification_service_1.FCMService();
+    }
     // ================= SIGN UP =================
     async signUp(inputs) {
         const { username, email, password, phone } = inputs;
@@ -113,7 +118,7 @@ class AuthService {
     }
     // ================= LOGIN =================
     async login(inputs) {
-        const { email, password } = inputs;
+        const { email, password, FCM } = inputs;
         const user = await user_model_1.UserModel.findOne({ email });
         if (!user)
             throw new Error("Invalid credentials");
@@ -130,6 +135,14 @@ class AuthService {
         if (!isValid) {
             await (0, redis_service_1.set)(attemptsKey, (attempts + 1).toString(), 5 * 60);
             throw new Error("Invalid credentials");
+        }
+        if (FCM) {
+            await (0, redis_service_1.addFCM)(user._id, FCM);
+            const tokens = await (0, redis_service_1.getFCMs)(user._id);
+            await this.fcmService.sendNotifications({ tokens,
+                title: "New Login Detected",
+                body: "A new login to your account was detected. If this was you, you can ignore this message. If not, please secure your account immediately."
+            });
         }
         const { token, refreshToken } = await (0, token_security_1.createLoginCredentials)(user);
         return { token, refreshToken };

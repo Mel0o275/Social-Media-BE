@@ -1,5 +1,5 @@
 import express from 'express';
-import { AuthController, UserController } from './modules';
+import { AuthController, UserController, PostController } from './modules';
 import cors from 'cors';
 import { globalErrorHandler } from './middleware';
 import { connectDB } from './DB/connection';
@@ -8,6 +8,9 @@ import { connectRedis } from './DB/redis.connection';
 import { s3Service } from './common/services/s3.service';
 import { promisify } from 'node:util';
 import { pipeline } from 'node:stream';
+import { CommentController } from './modules/Comment';
+import { StoryController} from './modules/Story';
+import { NotificationController } from './modules/Notifications';
 
 const s3WriteStream = promisify(pipeline);
 
@@ -30,6 +33,7 @@ export const bootstrap = async () => {
         }
         return await s3WriteStream(Body as NodeJS.ReadableStream, res.setHeader("Content-Type", ContentType || "application/octet-stream"));
     })
+    
 
     app.get("/pre-signed/*path", async (req: express.Request, res: express.Response) => {
         const { download, fileName } = req.query as { download?: string, fileName?: string };
@@ -51,6 +55,12 @@ export const bootstrap = async () => {
         });
         return res.json(result);
     });
+    // app.post('/send-notification', async (req: express.Request, res: express.Response) => {     
+    //     console.log(req.body.token);
+    //     await notificationService.sendNotification(req.body.token, "Test Notification", "This is a test notification sent from the server.");
+    //     res.json({ message: 'Notification sent successfully' });
+    // });
+
     app.get('/', (req: express.Request, res: express.Response) => {
         res.send('Hello World!');
     });
@@ -60,6 +70,10 @@ export const bootstrap = async () => {
     // Routing
     app.use('/auth', AuthController);
     app.use('/user', UserController);
+    app.use('/post', PostController);
+    app.use('/comment', CommentController);
+    app.use('/story', StoryController);
+    app.use('/notifications', NotificationController);
 
     // Global Error Handler
     app.use(globalErrorHandler);

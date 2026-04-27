@@ -85,4 +85,13 @@ router.patch("/cover-images", authentication(), cloudFileUpload({
         res.status(500).json({ message: "Error updating cover images", error: error });
     }
 });
+
+router.delete("/delete-profile", authentication(), async (req: CustomRequest, res: Response) => {
+    try {
+        const result = await AuthSecurityService.deleteProfile(req.user);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting profile", error: error });
+    }
+});
 export default router;

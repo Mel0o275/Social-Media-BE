@@ -1,6 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mGet = exports.keyByPrefix = exports.ttl = exports.deleteKey = exports.update = exports.get = exports.set = exports.revokeTokenBaseKey = exports.revokeTokenKey = void 0;
+exports.addFCM = addFCM;
+exports.removeFCM = removeFCM;
+exports.getFCMs = getFCMs;
+exports.hasFCMs = hasFCMs;
+exports.removeFCMUser = removeFCMUser;
 const redis_connection_1 = require("../../DB/redis.connection");
 const revokeTokenKey = (userId, jti) => {
     return `revoked_tokens:${(0, exports.revokeTokenBaseKey)(userId)}:${jti}`;
@@ -84,3 +89,21 @@ const mGet = async (keys = []) => {
     }
 };
 exports.mGet = mGet;
+function key(userId) {
+    return `user:FCM:${userId}`;
+}
+async function addFCM(userId, FCMToken) {
+    return await redis_connection_1.redisClient.sAdd(key(userId), FCMToken);
+}
+async function removeFCM(userId, FCMToken) {
+    return await redis_connection_1.redisClient.sRem(key(userId), FCMToken);
+}
+async function getFCMs(userId) {
+    return await redis_connection_1.redisClient.sMembers(key(userId));
+}
+async function hasFCMs(userId) {
+    return await redis_connection_1.redisClient.sCard(key(userId));
+}
+async function removeFCMUser(userId) {
+    return await redis_connection_1.redisClient.del(key(userId));
+}

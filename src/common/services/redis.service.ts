@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { redisClient } from "../../DB/redis.connection";
 
 export const revokeTokenKey = (userId: string | number, jti: string): string => {
@@ -71,4 +72,27 @@ export const mGet = async (keys: string[] = []): Promise<(string | null)[]> => {
         console.error("Error getting multiple values from Redis:", error);
         throw error;
     }
+}
+
+function key(userId: Types.ObjectId | string) {
+    return `user:FCM:${userId}`;
+}
+export async function addFCM(userId: Types.ObjectId | string, FCMToken: string) {
+    return await redisClient.sAdd(key(userId), FCMToken);
+}
+
+export async function removeFCM(userId: Types.ObjectId | string, FCMToken: string) {
+    return await redisClient.sRem(key(userId), FCMToken);
+}
+
+export async function getFCMs(userId: Types.ObjectId | string) {
+    return await redisClient.sMembers(key(userId));
+}
+
+export async function hasFCMs(userId: Types.ObjectId | string) {
+    return await redisClient.sCard(key(userId));
+}
+
+export async function removeFCMUser(userId: Types.ObjectId | string) {
+    return await redisClient.del(key(userId));
 }
