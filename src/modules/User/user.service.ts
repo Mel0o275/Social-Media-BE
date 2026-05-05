@@ -11,7 +11,7 @@ interface UpdatePassInput {
     newPassword: string;
 }
 
-class AuthSecurityService {
+export class AuthSecurityService {
     private readonly s3:S3Service
     constructor() {
         this.s3 = new S3Service();
@@ -49,11 +49,7 @@ class AuthSecurityService {
     }
 
     async profile(user: any) {
-    return {
-        name: user.username,
-        email: user.email,
-        profilePicture: user.profileImage,
-    };
+        return user;
     }
 
     async profileImage({ContentType, OriginalName} : { ContentType: string; OriginalName: string }, user: any) {
@@ -90,4 +86,4 @@ class AuthSecurityService {
     }
 }
 
-export default new AuthSecurityService();
+export const authSecurityService = new AuthSecurityService()

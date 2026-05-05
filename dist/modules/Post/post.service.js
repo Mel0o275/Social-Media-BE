@@ -204,14 +204,31 @@ class PostService {
         }).sort({ createdAt: -1 });
         return posts;
     }
-    async getFeedPosts(userId) {
-        return await post_model_1.PostModel.find({
+    async getFeedPosts(userId, limit = 10, cursor) {
+        const query = {
             isDeleted: false,
             $or: [
                 { availability: post_enum_1.PostAvailabilityEnum.PUBLIC },
                 { createdBy: new mongoose_1.Types.ObjectId(userId) }
             ]
-        }).sort({ createdAt: -1 });
+        };
+        if (cursor) {
+            query.createdAt = { $lt: new Date(cursor) };
+        }
+        const posts = await post_model_1.PostModel.find(query)
+            .populate("createdBy")
+            .populate("updatedBy")
+            .sort({ createdAt: -1 })
+            .limit(limit + 1);
+        let nextCursor = null;
+        if (posts.length > limit) {
+            const next = posts.pop();
+            nextCursor = next?.createdAt.toISOString();
+        }
+        return {
+            posts,
+            nextCursor
+        };
     }
     // 7. Like/Unlike a post
     async reactToPost(postId, user, type) {

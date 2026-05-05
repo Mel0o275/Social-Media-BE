@@ -9,8 +9,12 @@ import { s3Service } from './common/services/s3.service';
 import { promisify } from 'node:util';
 import { pipeline } from 'node:stream';
 import { CommentController } from './modules/Comment';
-import { StoryController} from './modules/Story';
+import { StoryController } from './modules/Story';
 import { NotificationController } from './modules/Notifications';
+import { createHandler } from 'graphql-http/lib/use/express';
+import { schema } from './modules/graphql/schema.gql';
+import { authentication, authenticationGQL } from './middleware/auth.middelware';
+import { verifyToken } from './common/security/token.security';
 
 const s3WriteStream = promisify(pipeline);
 
@@ -33,7 +37,7 @@ export const bootstrap = async () => {
         }
         return await s3WriteStream(Body as NodeJS.ReadableStream, res.setHeader("Content-Type", ContentType || "application/octet-stream"));
     })
-    
+
 
     app.get("/pre-signed/*path", async (req: express.Request, res: express.Response) => {
         const { download, fileName } = req.query as { download?: string, fileName?: string };
@@ -61,6 +65,32 @@ export const bootstrap = async () => {
     //     res.json({ message: 'Notification sent successfully' });
     // });
 
+    app.all("/graphql",
+        createHandler({
+            schema,
+            context: async (ctx) => {
+                const req = ctx.raw;
+
+                const authHeader = req.headers.authorization;
+
+                if (!authHeader) {
+                    return { user: null, decoded: null };
+                }
+
+                const token = authHeader.startsWith("Bearer ")
+                    ? authHeader.split(" ")[1]
+                    : authHeader;
+
+                const { user, decoded } = await verifyToken(token);
+
+                return {
+                    req,
+                    user,
+                    decoded
+                };
+            }
+        })
+    );
     app.get('/', (req: express.Request, res: express.Response) => {
         res.send('Hello World!');
     });

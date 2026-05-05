@@ -89,7 +89,7 @@ export class PostService {
         }
 
         const post = await PostModel.create({
-            createdBy: user._id ,
+            createdBy: user._id,
             content,
             availability,
             attachments,
@@ -250,15 +250,40 @@ export class PostService {
         return posts;
     }
 
-    async getFeedPosts(userId: Types.ObjectId | string) {
-
-        return await PostModel.find({
+    async getFeedPosts(
+        userId: Types.ObjectId | string,
+        limit = 10,
+        cursor?: string
+    ) {
+        const query: any = {
             isDeleted: false,
             $or: [
                 { availability: PostAvailabilityEnum.PUBLIC },
                 { createdBy: new Types.ObjectId(userId) }
             ]
-        }).sort({ createdAt: -1 });
+        };
+
+        if (cursor) {
+            query.createdAt = { $lt: new Date(cursor) };
+        }
+
+        const posts = await PostModel.find(query)
+            .populate("createdBy")  
+            .populate("updatedBy")  
+            .sort({ createdAt: -1 })
+            .limit(limit + 1);
+
+        let nextCursor = null;
+
+        if (posts.length > limit) {
+            const next = posts.pop();
+            nextCursor = next?.createdAt.toISOString();
+        }
+
+        return {
+            posts,
+            nextCursor
+        };
     }
     // 7. Like/Unlike a post
     async reactToPost(
@@ -325,33 +350,33 @@ export class PostService {
 
     async getPostReactions(postId: Types.ObjectId, user: IUser, isFriend = false) {
 
-    const post = await PostModel.findOne({
-        _id: postId,
-        isDeleted: false
-    });
+        const post = await PostModel.findOne({
+            _id: postId,
+            isDeleted: false
+        });
 
-    if (!post) {
-        throw new Error("Post not found");
+        if (!post) {
+            throw new Error("Post not found");
+        }
+
+        const isOwner = post.createdBy.toString() === user._id.toString();
+
+        const allowed =
+            post.availability === PostAvailabilityEnum.PUBLIC ||
+            isOwner ||
+            (post.availability === PostAvailabilityEnum.FRIENDS_ONLY && isFriend);
+
+        if (!allowed) {
+            throw new Error("Forbidden");
+        }
+
+        return await PostModel.findOne({
+            _id: postId,
+            isDeleted: false
+        })
+            .populate("reactions.user", "firstName lastName profilePicture")
+            .select("reactions");
     }
-
-    const isOwner = post.createdBy.toString() === user._id.toString();
-
-    const allowed =
-        post.availability === PostAvailabilityEnum.PUBLIC ||
-        isOwner ||
-        (post.availability === PostAvailabilityEnum.FRIENDS_ONLY && isFriend);
-
-    if (!allowed) {
-        throw new Error("Forbidden");
-    }
-
-    return await PostModel.findOne({
-        _id: postId,
-        isDeleted: false
-    })
-    .populate("reactions.user", "firstName lastName profilePicture")
-    .select("reactions");
-}
 
     // 9. Restore a deleted post
     async restorePost(postId: Types.ObjectId, user: HydratedDocument<IUser>) {

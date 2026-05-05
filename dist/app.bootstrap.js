@@ -17,6 +17,9 @@ const node_stream_1 = require("node:stream");
 const Comment_1 = require("./modules/Comment");
 const Story_1 = require("./modules/Story");
 const Notifications_1 = require("./modules/Notifications");
+const express_2 = require("graphql-http/lib/use/express");
+const schema_gql_1 = require("./modules/graphql/schema.gql");
+const token_security_1 = require("./common/security/token.security");
 const s3WriteStream = (0, node_util_1.promisify)(node_stream_1.pipeline);
 const bootstrap = async () => {
     // DB
@@ -63,6 +66,25 @@ const bootstrap = async () => {
     //     await notificationService.sendNotification(req.body.token, "Test Notification", "This is a test notification sent from the server.");
     //     res.json({ message: 'Notification sent successfully' });
     // });
+    app.all("/graphql", (0, express_2.createHandler)({
+        schema: schema_gql_1.schema,
+        context: async (ctx) => {
+            const req = ctx.raw;
+            const authHeader = req.headers.authorization;
+            if (!authHeader) {
+                return { user: null, decoded: null };
+            }
+            const token = authHeader.startsWith("Bearer ")
+                ? authHeader.split(" ")[1]
+                : authHeader;
+            const { user, decoded } = await (0, token_security_1.verifyToken)(token);
+            return {
+                req,
+                user,
+                decoded
+            };
+        }
+    }));
     app.get('/', (req, res) => {
         res.send('Hello World!');
     });

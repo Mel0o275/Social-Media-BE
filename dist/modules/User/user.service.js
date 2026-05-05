@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.authSecurityService = exports.AuthSecurityService = void 0;
 const user_model_1 = require("../../DB/model/User/user.model");
 const multer_enum_1 = require("../../common/enums/multer.enum");
 const hash_security_1 = require("../../common/security/hash.security");
@@ -38,11 +39,7 @@ class AuthSecurityService {
         return { message: "Password updated successfully" };
     }
     async profile(user) {
-        return {
-            name: user.username,
-            email: user.email,
-            profilePicture: user.profileImage,
-        };
+        return user;
     }
     async profileImage({ ContentType, OriginalName }, user) {
         const oldPath = user.profileImage || "";
@@ -78,4 +75,5 @@ class AuthSecurityService {
         return { message: "Account deleted successfully" };
     }
 }
-exports.default = new AuthSecurityService();
+exports.AuthSecurityService = AuthSecurityService;
+exports.authSecurityService = new AuthSecurityService();
