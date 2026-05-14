@@ -20,6 +20,7 @@ const Notifications_1 = require("./modules/Notifications");
 const express_2 = require("graphql-http/lib/use/express");
 const schema_gql_1 = require("./modules/graphql/schema.gql");
 const token_security_1 = require("./common/security/token.security");
+const realtime_gateway_1 = require("./modules/RealTime/realtime.gateway");
 const s3WriteStream = (0, node_util_1.promisify)(node_stream_1.pipeline);
 const bootstrap = async () => {
     // DB
@@ -102,8 +103,12 @@ const bootstrap = async () => {
     app.use("/*dummy", (req, res) => {
         res.status(404).json({ message: "Route not found" });
     });
-    app.listen(config_1.PORT, () => {
+    const httpServer = app.listen(config_1.PORT, () => {
         console.log('Server is running on http://localhost:' + config_1.PORT);
     });
+    await realtime_gateway_1.realTimeGateway.initializeIo(httpServer);
+    // io.of("/admin").on("connection", (socket)=>{
+    //     console.log(socket.id);
+    // })
 };
 exports.bootstrap = bootstrap;

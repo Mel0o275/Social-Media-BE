@@ -96,3 +96,26 @@ export async function hasFCMs(userId: Types.ObjectId | string) {
 export async function removeFCMUser(userId: Types.ObjectId | string) {
     return await redisClient.del(key(userId));
 }
+
+function socketkey(userId: Types.ObjectId | string) {
+    return `user:sockets:${userId}`;
+}
+export async function addSocket(userId: Types.ObjectId | string, socketId:string) {
+    return await redisClient.sAdd(socketkey(userId), socketId);
+}
+
+export async function removeSocket(userId: Types.ObjectId | string, socketId:string) {
+    return await redisClient.sRem(socketkey(userId), socketId);
+}
+
+export async function getSockets(userId: Types.ObjectId | string) {
+    return await redisClient.sMembers(socketkey(userId));
+}
+
+export async function hasSockets(userId: Types.ObjectId | string) {
+    return await redisClient.sCard(socketkey(userId));
+}
+
+export async function removeUser(userId: Types.ObjectId | string) {
+    return await redisClient.del(socketkey(userId));
+}

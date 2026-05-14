@@ -4,7 +4,9 @@ import { cloudFileUpload } from "../../common/utils/multer/multer";
 import { fieldValidation } from "../../common/utils/multer/multer.validation";
 import { storageApproachEnum } from "../../common/enums/multer.enum";
 import { authSecurityService } from "./user.service";
+import {default as ChatController} from "../Chat/chat.controller"
 const router: RouterType = Router();
+router.use("/:userId/chat",ChatController)
 
 interface CustomRequest extends Request {
     user?: any;

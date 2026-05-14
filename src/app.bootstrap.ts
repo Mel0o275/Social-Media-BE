@@ -13,8 +13,8 @@ import { StoryController } from './modules/Story';
 import { NotificationController } from './modules/Notifications';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { schema } from './modules/graphql/schema.gql';
-import { authentication, authenticationGQL } from './middleware/auth.middelware';
 import { verifyToken } from './common/security/token.security';
+import { realTimeGateway } from './modules/RealTime/realtime.gateway';
 
 const s3WriteStream = promisify(pipeline);
 
@@ -111,7 +111,14 @@ export const bootstrap = async () => {
     app.use("/*dummy", (req: express.Request, res: express.Response) => {
         res.status(404).json({ message: "Route not found" });
     })
-    app.listen(PORT, () => {
+    const httpServer = app.listen(PORT, () => {
         console.log('Server is running on http://localhost:' + PORT);
     });
+
+    await realTimeGateway.initializeIo(httpServer)
+
+    // io.of("/admin").on("connection", (socket)=>{
+    //     console.log(socket.id);
+
+    // })
 };

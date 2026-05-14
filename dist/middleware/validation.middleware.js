@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GQLvalidation = exports.validation = void 0;
+exports.Socketvalidation = exports.GQLvalidation = exports.validation = void 0;
 const Application_exception_1 = require("../common/Exceptions/Application.exception");
 const graphql_1 = require("graphql");
 const validation = (schema) => {
@@ -48,3 +48,10 @@ const GQLvalidation = async (schema, args) => {
     }
 };
 exports.GQLvalidation = GQLvalidation;
+const Socketvalidation = async (schema, args) => {
+    const validationResult = schema.safeParse(args);
+    if (!validationResult.success) {
+        throw new Error("Validation Error");
+    }
+};
+exports.Socketvalidation = Socketvalidation;

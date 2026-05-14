@@ -62,3 +62,11 @@ export const GQLvalidation = async(schema: ZodType, args:any) => {
         })
     }
 };
+
+export const Socketvalidation = async(schema: ZodType, args:any) => {
+    const validationResult = schema.safeParse(args);
+
+    if(!validationResult.success) {
+        throw new Error("Validation Error")
+    }
+};

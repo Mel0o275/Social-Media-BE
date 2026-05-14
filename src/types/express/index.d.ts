@@ -1,5 +1,6 @@
 import { HydratedDocument } from "mongoose";
 import { IUser } from "../../common/interfaces/user.interface";
+import { JwtPayload } from "jsonwebtoken";
 
 declare global {
     namespace Express {
@@ -8,3 +9,6 @@ declare global {
         }
     }
 }
+
+export interface IAuth {user: HydratedDocument<IUser>, decoded: JwtPayload}
+// export interface IAuthSocket extends Socket {data: IAuth}

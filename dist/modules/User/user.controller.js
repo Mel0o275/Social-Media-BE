@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middelware_1 = require("../../middleware/auth.middelware");
@@ -6,7 +9,9 @@ const multer_1 = require("../../common/utils/multer/multer");
 const multer_validation_1 = require("../../common/utils/multer/multer.validation");
 const multer_enum_1 = require("../../common/enums/multer.enum");
 const user_service_1 = require("./user.service");
+const chat_controller_1 = __importDefault(require("../Chat/chat.controller"));
 const router = (0, express_1.Router)();
+router.use("/:userId/chat", chat_controller_1.default);
 router.get("/profile", (0, auth_middelware_1.authentication)(), async (req, res) => {
     try {
         const account = await user_service_1.authSecurityService.profile(req.user);
