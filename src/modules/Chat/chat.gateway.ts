@@ -10,7 +10,6 @@ export class ChatGateway {
     registerEvents = (socket: Server, io: Server) => {
         this.chatEvent.sayHi(socket)
         this.chatEvent.sendMessage(socket, io)
-        this.chatEvent.reactMessage(socket, io);
     }
 }
 

@@ -1,7 +1,6 @@
 import { HydratedDocument, Types } from "mongoose";
 import { IUser } from "../../common/interfaces/user.interface";
 import { chatModel } from "../../DB/model/Chat/chat.model";
-import { ChatEnum } from "../../common/enums/chat.enum";
 import { S3Service } from "../../common/services/s3.service";
 
 export class ChatService {
@@ -16,46 +15,40 @@ export class ChatService {
         return "Done";
     };
 
-    getChat = async (
-        participantId: string,
-        user: HydratedDocument<IUser>,
-        page = 1,
-        limit = 2
-    ) => {
+getChat = async (participantId, user, page = 1, limit = 2) => {
 
-        const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-        let chat = await chatModel.findOne({
-            participants: {
-                $all: [
-                    user._id,
-                    new Types.ObjectId(participantId)
-                ]
-            }
-        }).populate("participants");
-
-        if (!chat) {
-            throw new Error("NO Chat Found");
+    const chat = await chatModel.findOne({
+        participants: {
+            $all: [
+                user._id,
+                new Types.ObjectId(participantId)
+            ]
         }
+    }).populate("participants");
 
-        const messages = chat.messages
-            .sort((a: any, b: any) =>
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            )
-            .slice(skip, skip + limit);
+    if (!chat) throw new Error("NO Chat Found");
 
-        return {
-            chatId: chat._id,
-            participants: chat.participants,
-            messages,
-            pagination: {
-                page,
-                limit,
-                total: chat.messages.length,
-                hasMore: skip + limit < chat.messages.length
-            }
-        };
+    const allMessages = [...chat.messages].sort(
+    (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+);
+
+const paginated = allMessages.slice(skip, skip + limit);
+    return {
+        chatId: chat._id,
+        participants: chat.participants,
+        messages: paginated.reverse(),
+        pagination: {
+            page,
+            limit,
+            total: allMessages.length,
+            hasMore: skip + limit < allMessages.length
+        }
     };
+};
 
     async sendMessage({ content, sendTo, attachments = [] }, user) {
 

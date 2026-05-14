@@ -14,7 +14,7 @@ class ChatService {
     };
     getChat = async (participantId, user, page = 1, limit = 2) => {
         const skip = (page - 1) * limit;
-        let chat = await chat_model_1.chatModel.findOne({
+        const chat = await chat_model_1.chatModel.findOne({
             participants: {
                 $all: [
                     user._id,
@@ -22,21 +22,20 @@ class ChatService {
                 ]
             }
         }).populate("participants");
-        if (!chat) {
+        if (!chat)
             throw new Error("NO Chat Found");
-        }
-        const messages = chat.messages
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .slice(skip, skip + limit);
+        const allMessages = [...chat.messages].sort((a, b) => new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime());
+        const paginated = allMessages.slice(skip, skip + limit);
         return {
             chatId: chat._id,
             participants: chat.participants,
-            messages,
+            messages: paginated.reverse(),
             pagination: {
                 page,
                 limit,
-                total: chat.messages.length,
-                hasMore: skip + limit < chat.messages.length
+                total: allMessages.length,
+                hasMore: skip + limit < allMessages.length
             }
         };
     };

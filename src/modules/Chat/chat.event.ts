@@ -60,36 +60,6 @@ export class ChatEvent {
         })
     }
 
-    reactMessage = async (socket, io) => {
-
-    socket.on("reactMessage", async (data) => {
-        try {
-
-            const message = await this.chatService.reactMessage(
-                data,
-                socket.data.user
-            );
-
-            const reciverIds = await getSockets(data.sendTo);
-
-            socket.emit("messageReaction", {
-                messageId: data.messageId,
-                reactions: message.reactions
-            });
-
-            if (reciverIds.length) {
-                socket.to(reciverIds).emit("messageReaction", {
-                    messageId: data.messageId,
-                    reactions: message.reactions
-                });
-            }
-
-        } catch (error) {
-            console.log(error);
-            socket.emit("custom_error", error.message);
-        }
-    });
-
 }
 
 
